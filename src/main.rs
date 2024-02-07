@@ -11,9 +11,7 @@ use ratatui::{
 };
 use std::io::{stdout, Result};
 use rand::{thread_rng, Rng};
-use rand::distributions::Alphanumeric;
 use log::info;
-use log4rs;
 
 #[derive(Clone, Debug)]
 struct LineState {
@@ -41,6 +39,9 @@ impl LineState {
     }
 
     pub fn update_lines(&mut self) {
+        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+                                abcdefghijklmnopqrstuvwxyz\
+                                0123456789)(}{][*&^%$#@!~";
         let mut rng = thread_rng();
         let mut updated = false; 
         match self.stream {
@@ -58,13 +59,14 @@ impl LineState {
                                 Cell::Sym(sym) => {
                                     match sym.white {
                                         true => {
-                                            let rand_char: String = thread_rng().sample_iter(&Alphanumeric).take(1).map(char::from).collect();
+                                            let idx = thread_rng().gen_range(0..CHARSET.len());
+                                            let rand_char = CHARSET[idx] as char;
                                             sym.white = false;
                                             let next_cell = iter.next();
                                             match next_cell {
                                                 Some(cell) => {
                                                     *cell = Cell::Sym(Sym {
-                                                        value: rand_char,
+                                                        value: rand_char.to_string(),
                                                         white: true,
                                                     });
                                                 },
@@ -104,9 +106,10 @@ impl LineState {
                             match cell {
                                 Cell::Whitespace => {
                                     if !updated{
-                                        let rand_char: String = thread_rng().sample_iter(&Alphanumeric).take(1).map(char::from).collect();
+                                        let idx = thread_rng().gen_range(0..CHARSET.len());
+                                        let rand_char = CHARSET[idx] as char;
                                         *cell = Cell::Sym(Sym {
-                                            value: rand_char,
+                                            value: rand_char.to_string(),
                                             white: true,
                                         });
                                         updated = true;
@@ -115,13 +118,14 @@ impl LineState {
                                 Cell::Sym(sym) => {
                                     match sym.white {
                                         true => {
-                                            let rand_char: String = thread_rng().sample_iter(&Alphanumeric).take(1).map(char::from).collect();
+                                            let idx = thread_rng().gen_range(0..CHARSET.len());
+                                            let rand_char = CHARSET[idx] as char;
                                             sym.white = false;
                                             let next_cell = iter.next();
                                             match next_cell {
                                                 Some(cell) => {
                                                     *cell = Cell::Sym(Sym {
-                                                        value: rand_char,
+                                                        value: rand_char.to_string(),
                                                         white: true,
                                                     });
                                                 },
@@ -174,8 +178,6 @@ enum Stream {
 }
 
 fn main() -> Result<()> {
-    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-    info!("starting...");
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
@@ -188,7 +190,6 @@ fn main() -> Result<()> {
     for _ in 0..t_width {
         matrix.push(LineState::new(t_height.into()));
     }
-    info!("Matrix: {} - Terminal: {}", matrix.len(), t_width);
 
     loop {
         let mut update = false;

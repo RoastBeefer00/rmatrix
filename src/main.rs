@@ -194,6 +194,7 @@ fn main() -> Result<()> {
 
     loop {
         let terminal_size = terminal.size().unwrap();
+        let t_height = terminal_size.height;
         let t_width = terminal_size.width;
         if t_width > matrix.len() as u16 {
             let sd = t_width as u32 - matrix.len() as u32;
@@ -202,6 +203,18 @@ fn main() -> Result<()> {
                     matrix.push(LineState::new(t_height.into()));
                 }
             }
+        }
+
+        let matrix_height = matrix.get(0).unwrap().line.len() as u16;
+        if t_height > matrix_height {
+             let sd = t_height as u32 - matrix_height as u32;
+             if sd > 0 {
+                 for col in &mut matrix {
+                     for _ in 0..sd {
+                         col.line.push(Cell::Whitespace);
+                     }
+                 }
+             }
         }
         let mut update = false;
         for line in &mut matrix {

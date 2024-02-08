@@ -12,6 +12,7 @@ use ratatui::{
 use std::io::{stdout, Result};
 use rand::{thread_rng, Rng};
 use log::info;
+use std::num::Wrapping;
 
 #[derive(Clone, Debug)]
 struct LineState {
@@ -192,6 +193,16 @@ fn main() -> Result<()> {
     }
 
     loop {
+        let terminal_size = terminal.size().unwrap();
+        let t_width = terminal_size.width;
+        if t_width > matrix.len() as u16 {
+            let sd = t_width as u32 - matrix.len() as u32;
+            if sd > 0 {
+                for _ in 0..sd {
+                    matrix.push(LineState::new(t_height.into()));
+                }
+            }
+        }
         let mut update = false;
         for line in &mut matrix {
             if update {

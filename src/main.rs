@@ -10,175 +10,12 @@ use ratatui::{
     layout::Rect, prelude::{CrosstermBackend, Terminal}, style::Style, text::{Line, Span, Text}, widgets::Paragraph
 };
 use std::io::{stdout, Result};
-use rand::{thread_rng, Rng};
-use log::info;
-use std::num::Wrapping;
+use matrix::{LineState, Cell};
 
-#[derive(Clone, Debug)]
-struct LineState {
-    stream: Stream,
-    line: Vec<Cell>,
-    chars: usize,
-    whitespace: usize,
-}
-
-impl LineState {
-    fn new(height: usize) -> Self {
-        let mut rng = thread_rng();
-
-        let stream = match rng.gen_bool(0.02) {
-            true => Stream::On,
-            false => Stream::Off,
-        };
-
-        Self {
-            stream,
-            line: vec![Cell::Whitespace; height.clone()],
-            chars: rng.gen_range(5..height.clone() / 2),
-            whitespace: rng.gen_range(10..height.clone()),
-        }
-    }
-
-    pub fn update_lines(&mut self) {
-        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
-                                abcdefghijklmnopqrstuvwxyz\
-                                0123456789)(}{][*&^%$#@!~";
-        let mut rng = thread_rng();
-        let mut updated = false; 
-        match self.stream {
-            Stream::Off => {
-                let line_len = self.line.len() - 1;
-                let mut iter = self.line.iter_mut();
-                loop {
-                    let next = iter.next();
-                    match next {
-                        Some(cell) => {
-                            match cell {
-                                Cell::Whitespace => {
-                                    updated = false;
-                                },
-                                Cell::Sym(sym) => {
-                                    match sym.white {
-                                        true => {
-                                            let idx = thread_rng().gen_range(0..CHARSET.len());
-                                            let rand_char = CHARSET[idx] as char;
-                                            sym.white = false;
-                                            let next_cell = iter.next();
-                                            match next_cell {
-                                                Some(cell) => {
-                                                    *cell = Cell::Sym(Sym {
-                                                        value: rand_char.to_string(),
-                                                        white: true,
-                                                    });
-                                                },
-                                                None => {}
-                                            }
-                                            updated = true;
-                                        },
-                                        false => {
-                                            if !updated {
-                                                *cell = Cell::Whitespace;
-                                                updated = true;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        None => {
-                            break;
-                        }
-                    }
-                }
-                self.whitespace -= 1;
-                info!("{}", self.whitespace);
-                if self.whitespace <= 0 {
-                    self.stream = Stream::On;
-                    self.whitespace = rng.gen_range(10..line_len);
-                }
-            },
-            Stream::On => {
-                let line_len = self.line.len() - 1;
-                let mut iter = self.line.iter_mut();
-                loop {
-                    let next = iter.next();
-                    match next {
-                        Some(cell) => {
-                            match cell {
-                                Cell::Whitespace => {
-                                    if !updated{
-                                        let idx = thread_rng().gen_range(0..CHARSET.len());
-                                        let rand_char = CHARSET[idx] as char;
-                                        *cell = Cell::Sym(Sym {
-                                            value: rand_char.to_string(),
-                                            white: true,
-                                        });
-                                        updated = true;
-                                    }
-                                },
-                                Cell::Sym(sym) => {
-                                    match sym.white {
-                                        true => {
-                                            let idx = thread_rng().gen_range(0..CHARSET.len());
-                                            let rand_char = CHARSET[idx] as char;
-                                            sym.white = false;
-                                            let next_cell = iter.next();
-                                            match next_cell {
-                                                Some(cell) => {
-                                                    *cell = Cell::Sym(Sym {
-                                                        value: rand_char.to_string(),
-                                                        white: true,
-                                                    });
-                                                },
-                                                None => {}
-                                            }
-                                            updated = true;
-                                        },
-                                        false => {
-                                            if updated {
-                                                *cell = Cell::Whitespace;
-                                                updated = false;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        None => {
-                            break;
-                        }
-                    }
-                }
-                self.chars -= 1;
-                info!("{}", self.chars);
-                if self.chars <= 0 {
-                    self.stream = Stream::Off;
-                    self.chars = rng.gen_range(5..line_len);
-                }
-            },
-        } 
-    }
-}
-
-#[derive(Clone, Debug)]
-struct Sym {
-    value: String,
-    white: bool,
-}
-
-#[derive(Clone, Debug)]
-enum Cell {
-    Sym(Sym),
-    Whitespace,
-}
-
-#[derive(Clone, Debug)]
-enum Stream {
-    On,
-    Off,
-}
+mod matrix;
 
 fn main() -> Result<()> {
+    // Initialize ratatui and get terminal size
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
@@ -187,12 +24,16 @@ fn main() -> Result<()> {
     let t_width = terminal_size.width;
     terminal.clear()?;
 
+    // Create new matrix where each column has its own state
     let mut matrix: Vec<LineState> = Vec::new(); 
     for _ in 0..t_width {
         matrix.push(LineState::new(t_height.into()));
     }
 
     loop {
+        // Handle the terminal growing in size
+        // (Currently don't care about terminal shrinking)
+        // TODO: Move this to a diffirent file
         let terminal_size = terminal.size().unwrap();
         let t_height = terminal_size.height;
         let t_width = terminal_size.width;
@@ -216,6 +57,10 @@ fn main() -> Result<()> {
                  }
              }
         }
+
+        // Only print matrix every other column
+        // Looks better than using every column
+        // TODO: find a better way to do this
         let mut update = false;
         for line in &mut matrix {
             if update {
@@ -225,24 +70,31 @@ fn main() -> Result<()> {
                 update = true;
             }
         }
-        // info!("{:?}", matrix);
+
+        // Draw the matrix after updating all lines
         terminal.draw(|frame| {
             let area = Rect::new(0, 0, frame.size().width, frame.size().height);
+            // Get the state of every column
             for (i, col) in area.columns().enumerate() {
                 let line_state = matrix.get(i).unwrap();
                 let lines: Vec<Line> = line_state.line.clone().into_iter().map(|cell| {
+                    // Determine how to print each line
                     match cell {
                         Cell::Sym(sym) => match sym.white {
                             true => Line::from(Span::styled(String::from(sym.value), Style::default().fg(ratatui::style::Color::White))),
+                            // TODO: Add way to dynamically change color
                             false => Line::from(Span::styled(String::from(sym.value), Style::default().fg(ratatui::style::Color::Green))),
                         },
                         Cell::Whitespace => Line::from(String::from(" ")),
                     }
                 }).collect();
+                // Render the line as a paragraph
                 frame.render_widget(Paragraph::new(Text::from(lines)), col);
             }
         })?;
 
+        // Poll duration determines how fast the matrix falls
+        // TODO: Add way to dynamically change speed
         if event::poll(std::time::Duration::from_millis(60))? {
             if let event::Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press

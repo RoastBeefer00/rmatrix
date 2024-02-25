@@ -33,7 +33,7 @@ impl LineState {
     }
 
     // Update the line each tick
-    pub fn update_lines(&mut self) {
+    pub fn update_line(&mut self) {
         const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                                 abcdefghijklmnopqrstuvwxyz\
                                 0123456789)(}{][*&^%$#@!~";

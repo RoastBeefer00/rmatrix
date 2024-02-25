@@ -64,7 +64,7 @@ fn main() -> Result<()> {
         let mut update = false;
         for line in &mut matrix {
             if update {
-                line.update_lines();
+                line.update_line();
                 update = false;
             } else {
                 update = true;

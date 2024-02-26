@@ -26,9 +26,9 @@ impl LineState {
 
         Self {
             stream,
-            line: vec![Cell::Whitespace; height.clone()],
-            chars: rng.gen_range(5..height.clone() / 2),
-            whitespace: rng.gen_range(10..height.clone()),
+            line: vec![Cell::Whitespace; height],
+            chars: rng.gen_range(5..height / 2),
+            whitespace: rng.gen_range(10..height),
         }
     }
 
@@ -58,14 +58,11 @@ impl LineState {
                                             let rand_char = CHARSET[idx] as char;
                                             sym.white = false;
                                             let next_cell = iter.next();
-                                            match next_cell {
-                                                Some(cell) => {
-                                                    *cell = Cell::Sym(Sym {
-                                                        value: rand_char.to_string(),
-                                                        white: true,
-                                                    });
-                                                },
-                                                None => {}
+                                            if let Some(cell) = next_cell {
+                                                *cell = Cell::Sym(Sym {
+                                                    value: rand_char.to_string(),
+                                                    white: true,
+                                                });
                                             }
                                             updated = true;
                                         },
@@ -86,7 +83,7 @@ impl LineState {
                 }
                 self.whitespace -= 1;
                 info!("{}", self.whitespace);
-                if self.whitespace <= 0 {
+                if self.whitespace == 0 {
                     self.stream = Stream::On;
                     self.whitespace = rng.gen_range(10..line_len);
                 }
@@ -117,14 +114,11 @@ impl LineState {
                                             let rand_char = CHARSET[idx] as char;
                                             sym.white = false;
                                             let next_cell = iter.next();
-                                            match next_cell {
-                                                Some(cell) => {
-                                                    *cell = Cell::Sym(Sym {
-                                                        value: rand_char.to_string(),
-                                                        white: true,
-                                                    });
-                                                },
-                                                None => {}
+                                            if let Some(cell) = next_cell {
+                                                *cell = Cell::Sym(Sym {
+                                                    value: rand_char.to_string(),
+                                                    white: true,
+                                                });
                                             }
                                             updated = true;
                                         },
@@ -145,7 +139,7 @@ impl LineState {
                 }
                 self.chars -= 1;
                 info!("{}", self.chars);
-                if self.chars <= 0 {
+                if self.chars == 0 {
                     self.stream = Stream::Off;
                     self.chars = rng.gen_range(5..line_len);
                 }

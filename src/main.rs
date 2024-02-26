@@ -46,7 +46,7 @@ fn main() -> Result<()> {
             }
         }
 
-        let matrix_height = matrix.get(0).unwrap().line.len() as u16;
+        let matrix_height = matrix.first().unwrap().line.len() as u16;
         if t_height > matrix_height {
              let sd = t_height as u32 - matrix_height as u32;
              if sd > 0 {
@@ -81,9 +81,9 @@ fn main() -> Result<()> {
                     // Determine how to print each line
                     match cell {
                         Cell::Sym(sym) => match sym.white {
-                            true => Line::from(Span::styled(String::from(sym.value), Style::default().fg(ratatui::style::Color::White))),
+                            true => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::White))),
                             // TODO: Add way to dynamically change color
-                            false => Line::from(Span::styled(String::from(sym.value), Style::default().fg(ratatui::style::Color::Green))),
+                            false => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Green))),
                         },
                         Cell::Whitespace => Line::from(String::from(" ")),
                     }

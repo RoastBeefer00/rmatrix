@@ -6,7 +6,7 @@ use crossterm::{
     },
     ExecutableCommand,
 };
-use clap::{Parser, Subcommand};
+use clap::Parser;
 use ratatui::{
     layout::Rect, prelude::{CrosstermBackend, Terminal}, style::Style, text::{Line, Span, Text}, widgets::Paragraph
 };
@@ -35,51 +35,26 @@ fn main() -> Result<()> {
     terminal.clear()?;
 
     // Create new matrix where each column has its own state
+    // Only need half the columns because using all looks cluttered
     let mut matrix: Vec<LineState> = Vec::new(); 
-    for _ in 0..t_width {
+    for _ in 0..t_width / 2 + 1 {
         matrix.push(LineState::new(t_height.into()));
     }
 
     loop {
-        // Handle the terminal growing in size
-        // (Currently don't care about terminal shrinking)
-        // TODO: Move this to a diffirent file
-        let terminal_size = terminal.size().unwrap();
-        let t_height = terminal_size.height;
-        let t_width = terminal_size.width;
-        if t_width > matrix.len() as u16 {
-            let sd = t_width as u32 - matrix.len() as u32;
-            if sd > 0 {
-                for _ in 0..sd {
-                    matrix.push(LineState::new(t_height.into()));
-                }
-            }
-        }
-
-        let matrix_height = matrix.first().unwrap().line.len() as u16;
-        if t_height > matrix_height {
-             let sd = t_height as u32 - matrix_height as u32;
-             if sd > 0 {
-                 for col in &mut matrix {
-                     for _ in 0..sd {
-                         col.line.push(Cell::Whitespace);
-                     }
-                 }
-             }
-        }
-
+        matrix::handle_resize(&terminal, &mut matrix);
         // Only print matrix every other column
         // Looks better than using every column
-        for line in matrix.iter_mut().step_by(2) {
+        for line in matrix.iter_mut() {
             line.update_line();
         }
 
         // Draw the matrix after updating all lines
         terminal.draw(|frame| {
             let area = Rect::new(0, 0, frame.size().width, frame.size().height);
-            // Get the state of every column
-            for (i, col) in area.columns().enumerate() {
-                let line_state = matrix.get(i).unwrap();
+            // Get the state of every other column
+            for (i, col) in area.columns().enumerate().step_by(2) {
+                let line_state = matrix.get(i / 2).unwrap();
                 let lines: Vec<Line> = line_state.line.clone().into_iter().map(|cell| {
                     // Determine how to print each line
                     match cell {

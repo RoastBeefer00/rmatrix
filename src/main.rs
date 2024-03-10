@@ -7,6 +7,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use clap::Parser;
+use rand::{thread_rng, Rng};
 use ratatui::{
     layout::Rect, prelude::{CrosstermBackend, Terminal}, style::Style, text::{Line, Span, Text}, widgets::Paragraph
 };
@@ -15,7 +16,7 @@ use matrix::{LineState, Cell};
 
 #[derive(Parser)]
 struct Cli {
-    #[arg(short, long, value_name = "COLOR", help = "Available colors: blue, cyan, red, purple, yellow, green")]
+    #[arg(short, long, value_name = "COLOR", help = "Available colors: blue, cyan, red, purple, yellow, green, rainbow")]
     color: Option<String>,
     #[arg(short, long, value_name = "SPEED", help = "Speed: 1-10")]
     speed: Option<i8>,
@@ -61,7 +62,13 @@ fn main() -> Result<()> {
                         Cell::Sym(sym) => match sym.white {
                             true => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::White))),
                             false => {
-                                if let Some(color) = cli.color.as_deref() {
+                                if let Some(mut color) = cli.color.as_deref() {
+                                    if color == "rainbow" {
+                                        let mut rng = thread_rng();
+                                        let colors = ["blue", "cyan", "red", "purple", "yellow", "green"];
+                                        let index = rng.gen_range(0..colors.len() - 1);
+                                        color = colors[index];
+                                    }
                                     match color.to_lowercase().as_str() {
                                         "blue" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Blue))),
                                         "cyan" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Cyan))),

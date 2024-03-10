@@ -70,15 +70,8 @@ fn main() -> Result<()> {
 
         // Only print matrix every other column
         // Looks better than using every column
-        // TODO: find a better way to do this
-        let mut update = false;
-        for line in &mut matrix {
-            if update {
-                line.update_line();
-                update = false;
-            } else {
-                update = true;
-            }
+        for line in matrix.iter_mut().step_by(2) {
+            line.update_line();
         }
 
         // Draw the matrix after updating all lines

@@ -7,6 +7,8 @@ use crossterm::{
     ExecutableCommand,
 };
 use clap::Parser;
+use log::info;
+use log4rs;
 use rand::{thread_rng, Rng};
 use ratatui::{
     layout::Rect, prelude::{CrosstermBackend, Terminal}, style::Style, text::{Line, Span, Text}, widgets::Paragraph
@@ -25,6 +27,7 @@ struct Cli {
 mod matrix;
 
 fn main() -> Result<()> {
+    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     let cli = Cli::parse();
     // Initialize ratatui and get terminal size
     stdout().execute(EnterAlternateScreen)?;
@@ -55,6 +58,11 @@ fn main() -> Result<()> {
             let area = Rect::new(0, 0, frame.size().width, frame.size().height);
             // Get the state of every other column
             for (i, col) in area.columns().enumerate().step_by(2) {
+                if i / 2 >= matrix.len() {
+                    continue;
+                }
+                info!("Matrix len: {}", matrix.len());
+                info!("Getting line: {}", i / 2);
                 let line_state = matrix.get(i / 2).unwrap();
                 let lines: Vec<Line> = line_state.line.clone().into_iter().map(|cell| {
                     // Determine how to print each line

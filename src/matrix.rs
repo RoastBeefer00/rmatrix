@@ -167,8 +167,6 @@ pub fn handle_resize(terminal: &Terminal<CrosstermBackend<Stdout>>, matrix: &mut
     let terminal_size = terminal.size().unwrap();
     let t_height = terminal_size.height;
     let t_width = terminal_size.width / 2;
-    info!("Terminal width: {:?}", t_width);
-    info!("Matrix len: {:?}", matrix.len());
     if t_width > matrix.len() as u16 {
         let sd = t_width as u32 - matrix.len() as u32;
         if sd > 0 {

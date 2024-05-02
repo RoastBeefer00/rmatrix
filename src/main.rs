@@ -46,7 +46,7 @@ fn main() -> Result<()> {
     }
 
     loop {
-        matrix::handle_resize(&terminal, &mut matrix);
+        matrix::handle_resize(&mut terminal, &mut matrix);
         // Only print matrix every other column
         // Looks better than using every column
         for line in matrix.iter_mut() {

@@ -161,31 +161,19 @@ pub enum Stream {
     Off,
 }
 
-pub fn handle_resize(terminal: &Terminal<CrosstermBackend<Stdout>>, matrix: &mut Vec<LineState>) {
-    // Handle the terminal growing in size
-    // (Currently don't care about terminal shrinking)
+pub fn handle_resize(terminal: &mut Terminal<CrosstermBackend<Stdout>>, matrix: &mut Vec<LineState>) {
     let terminal_size = terminal.size().unwrap();
     let t_height = terminal_size.height;
-    let t_width = terminal_size.width / 2;
-    if t_width > matrix.len() as u16 {
-        let sd = t_width as u32 - matrix.len() as u32;
-        if sd > 0 {
-            info!("Addinq {sd} cols");
-            for _ in 0..sd {
-                matrix.push(LineState::new(t_height.into()));
-            }
-        }
-    }
+    let t_width = terminal_size.width;
 
-    let matrix_height = matrix.first().unwrap().line.len() as u16;
-    if t_height > matrix_height {
-        let sd = t_height as u32 - matrix_height as u32;
-        if sd > 0 {
-            for col in matrix {
-                for _ in 0..sd {
-                    col.line.push(Cell::Whitespace);
-                }
-            }
+    if t_width as usize / 2 + 1 != matrix.len() || t_height as usize != matrix[0].line.len() {
+        terminal.clear().unwrap();
+
+        // Create new matrix where each column has its own state
+        // Only need half the columns because using all looks cluttered
+        *matrix = Vec::new().into();
+        for _ in 0..t_width / 2 + 1 {
+            matrix.push(LineState::new(t_height.into()));
         }
     }
 }

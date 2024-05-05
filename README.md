@@ -3,6 +3,12 @@
 rmatrix is an implementation of the [cmatrix](https://github.com/abishekvashok/cmatrix) project, but in Rust using the [ratatui crate](https://github.com/ratatui-org/ratatui).
 ![rmatrix](./docs/rmatrix.gif)
 
+## Installation
+Someone already had the name "rmatrix", so I had to call it "rjmatrix".
+```bash
+cargo install rjmatrix
+```
+
 ## Features
 ### Resize
 Properly handles resizing of the terminal window both vertically and horizontally.

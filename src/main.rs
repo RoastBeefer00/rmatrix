@@ -5,7 +5,7 @@ use crossterm::{
     ExecutableCommand,
 };
 use log::info;
-use log4rs;
+// use log4rs;
 use matrix::{Cell, LineState};
 use rand::{thread_rng, Rng};
 use ratatui::{
@@ -42,7 +42,7 @@ fn main() -> Result<()> {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     let cli = Cli::parse();
     // Poll duration determines how fast the matrix falls
-    let mut speed = match cli.speed {
+    let speed = match cli.speed {
         Some(s) => match s {
             1 => 120,
             2 => 100,
@@ -164,12 +164,11 @@ fn main() -> Result<()> {
                                         Style::default().fg(ratatui::style::Color::Yellow),
                                     )),
                                     "rainbow" => {
-                                        let color;
                                         let mut rng = thread_rng();
                                         let colors =
                                             ["blue", "cyan", "red", "purple", "yellow", "green"];
                                         let index = rng.gen_range(0..=colors.len() - 1);
-                                        color = colors[index];
+                                        let color = colors[index];
                                         match color {
                                             "blue" => Line::from(Span::styled(
                                                 sym.value,

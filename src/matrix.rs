@@ -1,4 +1,3 @@
-use log::info;
 use rand::{thread_rng, Rng};
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::io::Stdout;
@@ -171,7 +170,7 @@ pub fn handle_resize(terminal: &mut Terminal<CrosstermBackend<Stdout>>, matrix: 
 
         // Create new matrix where each column has its own state
         // Only need half the columns because using all looks cluttered
-        *matrix = Vec::new().into();
+        *matrix = Vec::new();
         for _ in 0..t_width / 2 + 1 {
             matrix.push(LineState::new(t_height.into()));
         }

@@ -17,26 +17,23 @@ Currently supports the following colors:
 - cyan
 - rainbow
 
-### Static
+Cycle through random colors by pressing `c`.
+
+### Speed
 Change the speed the matrix falls on a scale of 1-10 (1 being the slowest and 10 being the fastest).
+
+Cycle through the speed by pressing `0-9` (0 being the equivalent of 10).
 
 ## Help
 ```
 Usage: rmatrix [OPTIONS]
 
 Options:
--c, --color <COLOR>  Available colors: blue, cyan, red, purple, yellow, green
+-c, --color <COLOR>  Available colors: blue, cyan, red, purple, yellow, green, rainbow
 -s, --speed <SPEED>  Speed: 1-10
 -h, --help           Print help
 
 ```
 
 ## Future Improvements
-- Shrink matrix down to size of terminal window when size is decreased
-    > Currently only grows because a size increase will cause panic if not handled but decrease does not
 - Add more colors
-- Dynamically change colors and speed while program is running
-    - `0-9` to change speed
-    - `c` to cycle colors
-
-

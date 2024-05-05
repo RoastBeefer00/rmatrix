@@ -1,27 +1,39 @@
+use clap::Parser;
 use crossterm::{
     event::{self, KeyCode, KeyEventKind},
-    terminal::{
-        disable_raw_mode, enable_raw_mode, EnterAlternateScreen,
-        LeaveAlternateScreen,
-    },
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use clap::Parser;
 use log::info;
-use log4rs;
+// use log4rs;
+use matrix::{Cell, LineState};
 use rand::{thread_rng, Rng};
 use ratatui::{
-    layout::Rect, prelude::{CrosstermBackend, Terminal}, style::Style, text::{Line, Span, Text}, widgets::Paragraph
+    layout::Rect,
+    prelude::{CrosstermBackend, Terminal},
+    style::Style,
+    text::{Line, Span, Text},
+    widgets::Paragraph,
 };
 use std::io::{stdout, Result};
-use matrix::{LineState, Cell};
 
 #[derive(Parser)]
+#[command(about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, and `q` to quit.")]
 struct Cli {
-    #[arg(short, long, value_name = "COLOR", help = "Available colors: blue, cyan, red, purple, yellow, green, rainbow")]
+    #[arg(
+        short,
+        long,
+        value_name = "COLOR",
+        help = "Available colors: blue, cyan, red, purple, yellow, green, rainbow"
+    )]
     color: Option<String>,
     #[arg(short, long, value_name = "SPEED", help = "Speed: 1-10")]
     speed: Option<i8>,
+}
+
+struct State {
+    color: String,
+    speed: u64,
 }
 
 mod matrix;
@@ -29,6 +41,60 @@ mod matrix;
 fn main() -> Result<()> {
     log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     let cli = Cli::parse();
+    // Poll duration determines how fast the matrix falls
+    let speed = match cli.speed {
+        Some(s) => match s {
+            1 => 120,
+            2 => 100,
+            3 => 80,
+            4 => 60,
+            5 => 50,
+            6 => 40,
+            7 => 30,
+            8 => 20,
+            9 => 10,
+            10 => 5,
+            _ => 60,
+        },
+        None => 60,
+    };
+    let mut state = if let Some(color) = cli.color.as_deref() {
+        match color.to_lowercase().as_str() {
+            "blue" => State {
+                color: color.to_string(),
+                speed,
+            },
+            "cyan" => State {
+                color: color.to_string(),
+                speed,
+            },
+            "red" => State {
+                color: color.to_string(),
+                speed,
+            },
+            "purple" => State {
+                color: color.to_string(),
+                speed,
+            },
+            "yellow" => State {
+                color: color.to_string(),
+                speed,
+            },
+            "rainbow" => State {
+                color: color.to_string(),
+                speed,
+            },
+            _ => State {
+                color: "green".to_string(),
+                speed,
+            },
+        }
+    } else {
+        State {
+            color: "green".to_string(),
+            speed,
+        }
+    };
     // Initialize ratatui and get terminal size
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
@@ -40,7 +106,7 @@ fn main() -> Result<()> {
 
     // Create new matrix where each column has its own state
     // Only need half the columns because using all looks cluttered
-    let mut matrix: Vec<LineState> = Vec::new(); 
+    let mut matrix: Vec<LineState> = Vec::new();
     for _ in 0..t_width / 2 + 1 {
         matrix.push(LineState::new(t_height.into()));
     }
@@ -64,64 +130,112 @@ fn main() -> Result<()> {
                 info!("Matrix len: {}", matrix.len());
                 info!("Getting line: {}", i / 2);
                 let line_state = matrix.get(i / 2).unwrap();
-                let lines: Vec<Line> = line_state.line.clone().into_iter().map(|cell| {
-                    // Determine how to print each line
-                    match cell {
-                        Cell::Sym(sym) => match sym.white {
-                            true => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::White))),
-                            false => {
-                                if let Some(mut color) = cli.color.as_deref() {
-                                    if color == "rainbow" {
+                let lines: Vec<Line> = line_state
+                    .line
+                    .clone()
+                    .into_iter()
+                    .map(|cell| {
+                        // Determine how to print each line
+                        match cell {
+                            Cell::Sym(sym) => match sym.white {
+                                true => Line::from(Span::styled(
+                                    sym.value,
+                                    Style::default().fg(ratatui::style::Color::White),
+                                )),
+                                false => match state.color.as_str() {
+                                    "blue" => Line::from(Span::styled(
+                                        sym.value,
+                                        Style::default().fg(ratatui::style::Color::Blue),
+                                    )),
+                                    "cyan" => Line::from(Span::styled(
+                                        sym.value,
+                                        Style::default().fg(ratatui::style::Color::Cyan),
+                                    )),
+                                    "red" => Line::from(Span::styled(
+                                        sym.value,
+                                        Style::default().fg(ratatui::style::Color::Red),
+                                    )),
+                                    "purple" => Line::from(Span::styled(
+                                        sym.value,
+                                        Style::default().fg(ratatui::style::Color::Magenta),
+                                    )),
+                                    "yellow" => Line::from(Span::styled(
+                                        sym.value,
+                                        Style::default().fg(ratatui::style::Color::Yellow),
+                                    )),
+                                    "rainbow" => {
                                         let mut rng = thread_rng();
-                                        let colors = ["blue", "cyan", "red", "purple", "yellow", "green"];
-                                        let index = rng.gen_range(0..colors.len() - 1);
-                                        color = colors[index];
+                                        let colors =
+                                            ["blue", "cyan", "red", "purple", "yellow", "green"];
+                                        let index = rng.gen_range(0..=colors.len() - 1);
+                                        let color = colors[index];
+                                        match color {
+                                            "blue" => Line::from(Span::styled(
+                                                sym.value,
+                                                Style::default().fg(ratatui::style::Color::Blue),
+                                            )),
+                                            "cyan" => Line::from(Span::styled(
+                                                sym.value,
+                                                Style::default().fg(ratatui::style::Color::Cyan),
+                                            )),
+                                            "red" => Line::from(Span::styled(
+                                                sym.value,
+                                                Style::default().fg(ratatui::style::Color::Red),
+                                            )),
+                                            "purple" => Line::from(Span::styled(
+                                                sym.value,
+                                                Style::default().fg(ratatui::style::Color::Magenta),
+                                            )),
+                                            "yellow" => Line::from(Span::styled(
+                                                sym.value,
+                                                Style::default().fg(ratatui::style::Color::Yellow),
+                                            )),
+                                            _ => Line::from(Span::styled(
+                                                sym.value,
+                                                Style::default().fg(ratatui::style::Color::Green),
+                                            )),
+                                        }
                                     }
-                                    match color.to_lowercase().as_str() {
-                                        "blue" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Blue))),
-                                        "cyan" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Cyan))),
-                                        "red" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Red))),
-                                        "purple" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Magenta))),
-                                        "yellow" => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Yellow))),
-                                        _ => Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Green))),
-                                    }
-                                } else {
-                                    Line::from(Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Green)))
-                                }
-                            }
-                        },
-                        Cell::Whitespace => Line::from(String::from(" ")),
-                    }
-                }).collect();
+                                    _ => Line::from(Span::styled(
+                                        sym.value,
+                                        Style::default().fg(ratatui::style::Color::Green),
+                                    )),
+                                },
+                            },
+                            Cell::Whitespace => Line::from(String::from(" ")),
+                        }
+                    })
+                    .collect();
                 // Render the line as a paragraph
                 frame.render_widget(Paragraph::new(Text::from(lines)), col);
             }
         })?;
 
-        // Poll duration determines how fast the matrix falls
-        let speed = match cli.speed {
-            Some(s) => match s {
-                1 => 120,
-                2 => 100,
-                3 => 80,
-                4 => 60,
-                5 => 50,
-                6 => 40,
-                7 => 30,
-                8 => 20,
-                9 => 10,
-                10 => 5,
-                _ => 60,
-            },
-            None => 60,
-        };
-        if event::poll(std::time::Duration::from_millis(speed))? {
+        if event::poll(std::time::Duration::from_millis(state.speed))? {
             if let event::Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press
-                    && key.code == KeyCode::Char('q')
-                    {
-                        break;
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Char('q') => break,
+                        KeyCode::Char('c') => {
+                            let mut rng = thread_rng();
+                            let mut colors: Vec<&str> = vec!["blue", "cyan", "red", "purple", "yellow", "green", "rainbow"];
+                            colors = colors.into_iter().filter(|color| color != &state.color.as_str()).collect::<Vec<&str>>(); 
+                            let index = rng.gen_range(0..=colors.len() - 1);
+                            state.color = colors[index].to_string();
+                        }
+                        KeyCode::Char('1') => state.speed = 120,
+                        KeyCode::Char('2') => state.speed = 100,
+                        KeyCode::Char('3') => state.speed = 80,
+                        KeyCode::Char('4') => state.speed = 60,
+                        KeyCode::Char('5') => state.speed = 50,
+                        KeyCode::Char('6') => state.speed = 40,
+                        KeyCode::Char('7') => state.speed = 30,
+                        KeyCode::Char('8') => state.speed = 20,
+                        KeyCode::Char('9') => state.speed = 10,
+                        KeyCode::Char('0') => state.speed = 5,
+                        _ => {}
                     }
+                }
             }
         }
     }

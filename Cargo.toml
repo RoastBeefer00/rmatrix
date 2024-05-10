@@ -5,6 +5,7 @@ edition = "2021"
 description = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, and `q` to quit."
 authors = ["Jake J <roastbeefer000@gmail.com>"]
 license = "MIT"
+repository = "https://github.com/RoastBeefer00/rmatrix"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,6 +1,6 @@
 [package]
 name = "rjmatrix"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, and `q` to quit."
 authors = ["Jake J <roastbeefer000@gmail.com>"]

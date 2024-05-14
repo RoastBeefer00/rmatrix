@@ -4,16 +4,11 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use log::info;
-// use log4rs;
-use matrix::{Cell, LineState};
+use matrix::{LineState, State, Direction};
 use rand::{thread_rng, Rng};
 use ratatui::{
     layout::Rect,
     prelude::{CrosstermBackend, Terminal},
-    style::Style,
-    text::{Line, Span, Text},
-    widgets::Paragraph,
 };
 use std::io::{stdout, Result};
 
@@ -29,12 +24,10 @@ struct Cli {
     color: Option<String>,
     #[arg(short, long, value_name = "SPEED", help = "Speed: 1-10")]
     speed: Option<i8>,
+    #[arg(short, long, value_name = "DIRECTION", help = "Direction: up, down, left, or right")]
+    direction: Option<String>,
 }
 
-struct State {
-    color: String,
-    speed: u64,
-}
 
 mod matrix;
 
@@ -58,61 +51,70 @@ fn main() -> Result<()> {
         },
         None => 60,
     };
+
+    let direction = match cli.direction {
+        Some(d) => match d.to_lowercase().as_str() {
+            "up" => Direction::Up,
+            "right" => Direction::Right,
+            "left" => Direction::Left,
+            _ => Direction::Down,
+        },
+        None => Direction::Down,
+    };
     let mut state = if let Some(color) = cli.color.as_deref() {
         match color.to_lowercase().as_str() {
             "blue" => State {
                 color: color.to_string(),
                 speed,
+                direction,
             },
             "cyan" => State {
                 color: color.to_string(),
                 speed,
+                direction,
             },
             "red" => State {
                 color: color.to_string(),
                 speed,
+                direction,
             },
             "purple" => State {
                 color: color.to_string(),
                 speed,
+                direction,
             },
             "yellow" => State {
                 color: color.to_string(),
                 speed,
+                direction,
             },
             "rainbow" => State {
                 color: color.to_string(),
                 speed,
+                direction,
             },
             _ => State {
                 color: "green".to_string(),
                 speed,
+                direction,
             },
         }
     } else {
         State {
             color: "green".to_string(),
             speed,
+            direction,
         }
     };
     // Initialize ratatui and get terminal size
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-    let terminal_size = terminal.size().unwrap();
-    let t_height = terminal_size.height;
-    let t_width = terminal_size.width;
-    terminal.clear()?;
-
-    // Create new matrix where each column has its own state
-    // Only need half the columns because using all looks cluttered
     let mut matrix: Vec<LineState> = Vec::new();
-    for _ in 0..t_width / 2 + 1 {
-        matrix.push(LineState::new(t_height.into()));
-    }
+    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
 
     loop {
-        matrix::handle_resize(&mut terminal, &mut matrix);
+        matrix::handle_resize(&mut terminal, &mut matrix, &state);
         // Only print matrix every other column
         // Looks better than using every column
         for line in matrix.iter_mut() {
@@ -122,92 +124,16 @@ fn main() -> Result<()> {
         // Draw the matrix after updating all lines
         terminal.draw(|frame| {
             let area = Rect::new(0, 0, frame.size().width, frame.size().height);
-            // Get the state of every other column
-            for (i, col) in area.columns().enumerate().step_by(2) {
-                if i / 2 >= matrix.len() {
-                    continue;
+            if state.direction == Direction::Up || state.direction == Direction::Down {
+                // Get the state of every other column
+                for (i, col) in area.columns().enumerate().step_by(2) {
+                    matrix::process_matrix_cols(i, col, frame, &mut matrix, &state);
                 }
-                info!("Matrix len: {}", matrix.len());
-                info!("Getting line: {}", i / 2);
-                let line_state = matrix.get(i / 2).unwrap();
-                let lines: Vec<Line> = line_state
-                    .line
-                    .clone()
-                    .into_iter()
-                    .map(|cell| {
-                        // Determine how to print each line
-                        match cell {
-                            Cell::Sym(sym) => match sym.white {
-                                true => Line::from(Span::styled(
-                                    sym.value,
-                                    Style::default().fg(ratatui::style::Color::White),
-                                )),
-                                false => match state.color.as_str() {
-                                    "blue" => Line::from(Span::styled(
-                                        sym.value,
-                                        Style::default().fg(ratatui::style::Color::Blue),
-                                    )),
-                                    "cyan" => Line::from(Span::styled(
-                                        sym.value,
-                                        Style::default().fg(ratatui::style::Color::Cyan),
-                                    )),
-                                    "red" => Line::from(Span::styled(
-                                        sym.value,
-                                        Style::default().fg(ratatui::style::Color::Red),
-                                    )),
-                                    "purple" => Line::from(Span::styled(
-                                        sym.value,
-                                        Style::default().fg(ratatui::style::Color::Magenta),
-                                    )),
-                                    "yellow" => Line::from(Span::styled(
-                                        sym.value,
-                                        Style::default().fg(ratatui::style::Color::Yellow),
-                                    )),
-                                    "rainbow" => {
-                                        let mut rng = thread_rng();
-                                        let colors =
-                                            ["blue", "cyan", "red", "purple", "yellow", "green"];
-                                        let index = rng.gen_range(0..=colors.len() - 1);
-                                        let color = colors[index];
-                                        match color {
-                                            "blue" => Line::from(Span::styled(
-                                                sym.value,
-                                                Style::default().fg(ratatui::style::Color::Blue),
-                                            )),
-                                            "cyan" => Line::from(Span::styled(
-                                                sym.value,
-                                                Style::default().fg(ratatui::style::Color::Cyan),
-                                            )),
-                                            "red" => Line::from(Span::styled(
-                                                sym.value,
-                                                Style::default().fg(ratatui::style::Color::Red),
-                                            )),
-                                            "purple" => Line::from(Span::styled(
-                                                sym.value,
-                                                Style::default().fg(ratatui::style::Color::Magenta),
-                                            )),
-                                            "yellow" => Line::from(Span::styled(
-                                                sym.value,
-                                                Style::default().fg(ratatui::style::Color::Yellow),
-                                            )),
-                                            _ => Line::from(Span::styled(
-                                                sym.value,
-                                                Style::default().fg(ratatui::style::Color::Green),
-                                            )),
-                                        }
-                                    }
-                                    _ => Line::from(Span::styled(
-                                        sym.value,
-                                        Style::default().fg(ratatui::style::Color::Green),
-                                    )),
-                                },
-                            },
-                            Cell::Whitespace => Line::from(String::from(" ")),
-                        }
-                    })
-                    .collect();
-                // Render the line as a paragraph
-                frame.render_widget(Paragraph::new(Text::from(lines)), col);
+            } else {
+                // Get the state of every other row
+                for (i, row) in area.rows().enumerate() {
+                    matrix::process_matrix_rows(i, row, frame, &mut matrix, &state);
+                }
             }
         })?;
 
@@ -233,6 +159,30 @@ fn main() -> Result<()> {
                         KeyCode::Char('8') => state.speed = 20,
                         KeyCode::Char('9') => state.speed = 10,
                         KeyCode::Char('0') => state.speed = 5,
+                        KeyCode::Up => {
+                            if state.direction != Direction::Up {
+                                state.direction = Direction::Up;
+                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                            }
+                        },
+                        KeyCode::Down => {
+                            if state.direction != Direction::Down {
+                                state.direction = Direction::Down;
+                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                            }
+                        },
+                        KeyCode::Left => {
+                            if state.direction != Direction::Left {
+                                state.direction = Direction::Left;
+                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                            }
+                        },
+                        KeyCode::Right => {
+                            if state.direction != Direction::Right {
+                                state.direction = Direction::Right;
+                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                            }
+                        },
                         _ => {}
                     }
                 }

@@ -636,8 +636,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "rmatrix"
-version = "0.1.1"
+name = "rjmatrix"
+version = "1.0.2"
 dependencies = [
  "clap",
  "crossterm",

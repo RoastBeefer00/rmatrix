@@ -30,6 +30,9 @@ Change the speed the matrix falls on a scale of 1-10 (1 being the slowest and 10
 
 Cycle through the speed by pressing `0-9` (0 being the equivalent of 10).
 
+### Direction
+Change the direction the matrix falls using the arrow keys.
+
 ## Help
 ```
 Usage: rmatrix [OPTIONS]

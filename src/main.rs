@@ -13,7 +13,7 @@ use ratatui::{
 use std::io::{stdout, Result};
 
 #[derive(Parser)]
-#[command(about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, and `q` to quit.")]
+#[command(about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, and `q` to quit.")]
 struct Cli {
     #[arg(
         short,
@@ -32,7 +32,7 @@ struct Cli {
 mod matrix;
 
 fn main() -> Result<()> {
-    log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
+    // log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
     let cli = Cli::parse();
     // Poll duration determines how fast the matrix falls
     let speed = match cli.speed {

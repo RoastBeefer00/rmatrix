@@ -179,31 +179,6 @@ pub enum Direction {
     Right,
 }
 
-pub fn handle_resize(
-    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
-    matrix: &mut Vec<LineState>,
-    state: &State
-) {
-    let terminal_size = terminal.size().unwrap();
-    let t_height = terminal_size.height;
-    let t_width = terminal_size.width;
-
-    if state.direction == Direction::Up || state.direction == Direction::Down {
-        if t_width as usize / 2 + 1 != matrix.len() || t_height as usize != matrix[0].line.len() {
-            match create_matrix(matrix, terminal, state) {
-                Ok(_) => (),
-                Err(e) => panic!("Unable to create matrix with error: {}", e),
-            };
-        }
-    } else if t_height as usize - 1 != matrix.len() || t_width as usize != matrix[0].line.len() {
-            info!("resizing");
-            match create_matrix(matrix, terminal, state) {
-                Ok(_) => (),
-                Err(e) => panic!("Unable to create matrix with error: {}", e),
-            };
-    }
-}
-
 pub fn process_matrix_cols(i: usize, line: Rect, frame: &mut Frame, matrix: &mut [LineState], state: &State) {
     if i / 2 >= matrix.len() {
         return

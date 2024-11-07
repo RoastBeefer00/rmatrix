@@ -114,7 +114,6 @@ fn main() -> Result<()> {
     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
 
     loop {
-        matrix::handle_resize(&mut terminal, &mut matrix, &state);
         // Only print matrix every other column
         // Looks better than using every column
         for line in matrix.iter_mut() {
@@ -138,54 +137,61 @@ fn main() -> Result<()> {
         })?;
 
         if event::poll(std::time::Duration::from_millis(state.speed))? {
-            if let event::Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('q') => break,
-                        KeyCode::Char('c') => {
-                            let mut rng = thread_rng();
-                            let mut colors: Vec<&str> = vec!["blue", "cyan", "red", "purple", "yellow", "green", "rainbow"];
-                            colors = colors.into_iter().filter(|color| color != &state.color.as_str()).collect::<Vec<&str>>(); 
-                            let index = rng.gen_range(0..=colors.len() - 1);
-                            state.color = colors[index].to_string();
+            match event::read()? {
+                event::Event::Resize(_, _) => {
+                    terminal.autoresize()?;
+                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                },
+                event::Event::Key(key) => {
+                    if key.kind == KeyEventKind::Press {
+                        match key.code {
+                            KeyCode::Char('q') => break,
+                            KeyCode::Char('c') => {
+                                let mut rng = thread_rng();
+                                let mut colors: Vec<&str> = vec!["blue", "cyan", "red", "purple", "yellow", "green", "rainbow"];
+                                colors = colors.into_iter().filter(|color| color != &state.color.as_str()).collect::<Vec<&str>>(); 
+                                let index = rng.gen_range(0..=colors.len() - 1);
+                                state.color = colors[index].to_string();
+                            }
+                            KeyCode::Char('1') => state.speed = 120,
+                            KeyCode::Char('2') => state.speed = 100,
+                            KeyCode::Char('3') => state.speed = 80,
+                            KeyCode::Char('4') => state.speed = 60,
+                            KeyCode::Char('5') => state.speed = 50,
+                            KeyCode::Char('6') => state.speed = 40,
+                            KeyCode::Char('7') => state.speed = 30,
+                            KeyCode::Char('8') => state.speed = 20,
+                            KeyCode::Char('9') => state.speed = 10,
+                            KeyCode::Char('0') => state.speed = 5,
+                            KeyCode::Up => {
+                                if state.direction != Direction::Up {
+                                    state.direction = Direction::Up;
+                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                }
+                            },
+                            KeyCode::Down => {
+                                if state.direction != Direction::Down {
+                                    state.direction = Direction::Down;
+                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                }
+                            },
+                            KeyCode::Left => {
+                                if state.direction != Direction::Left {
+                                    state.direction = Direction::Left;
+                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                }
+                            },
+                            KeyCode::Right => {
+                                if state.direction != Direction::Right {
+                                    state.direction = Direction::Right;
+                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                }
+                            },
+                            _ => {}
                         }
-                        KeyCode::Char('1') => state.speed = 120,
-                        KeyCode::Char('2') => state.speed = 100,
-                        KeyCode::Char('3') => state.speed = 80,
-                        KeyCode::Char('4') => state.speed = 60,
-                        KeyCode::Char('5') => state.speed = 50,
-                        KeyCode::Char('6') => state.speed = 40,
-                        KeyCode::Char('7') => state.speed = 30,
-                        KeyCode::Char('8') => state.speed = 20,
-                        KeyCode::Char('9') => state.speed = 10,
-                        KeyCode::Char('0') => state.speed = 5,
-                        KeyCode::Up => {
-                            if state.direction != Direction::Up {
-                                state.direction = Direction::Up;
-                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
-                            }
-                        },
-                        KeyCode::Down => {
-                            if state.direction != Direction::Down {
-                                state.direction = Direction::Down;
-                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
-                            }
-                        },
-                        KeyCode::Left => {
-                            if state.direction != Direction::Left {
-                                state.direction = Direction::Left;
-                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
-                            }
-                        },
-                        KeyCode::Right => {
-                            if state.direction != Direction::Right {
-                                state.direction = Direction::Right;
-                                matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
-                            }
-                        },
-                        _ => {}
                     }
-                }
+                },
+                _ => {},
             }
         }
     }

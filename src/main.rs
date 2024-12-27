@@ -11,6 +11,7 @@ use ratatui::{
     prelude::{CrosstermBackend, Terminal},
 };
 use std::io::{stdout, Result};
+use rayon::prelude::*;
 
 #[derive(Parser)]
 #[command(about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, and `q` to quit.")]
@@ -114,11 +115,8 @@ fn main() -> Result<()> {
     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
 
     loop {
-        // Only print matrix every other column
-        // Looks better than using every column
-        for line in matrix.iter_mut() {
-            line.update_line();
-        }
+        // Update all lines
+        matrix.par_iter_mut().for_each(|line| line.update_line());
 
         // Draw the matrix after updating all lines
         terminal.draw(|frame| {

@@ -54,38 +54,32 @@ impl LineState {
             Stream::Off => {
                 let line_len = self.line.len() - 1;
                 let mut iter = self.line.iter_mut();
-                loop {
-                    let next = iter.next();
-                    match next {
-                        Some(cell) => match cell {
-                            Cell::Whitespace => {
-                                updated = false;
+                while let Some(cell) = iter.next() {
+                    match cell {
+                        Cell::Whitespace => {
+                            updated = false;
+                        }
+                        Cell::Sym(sym) => match sym.white {
+                            true => {
+                                let idx = thread_rng().gen_range(0..CHARSET.len());
+                                let rand_char = CHARSET[idx] as char;
+                                sym.white = false;
+                                let next_cell = iter.next();
+                                if let Some(cell) = next_cell {
+                                    *cell = Cell::Sym(Sym {
+                                        value: rand_char.to_string(),
+                                        white: true,
+                                    });
+                                }
+                                updated = true;
                             }
-                            Cell::Sym(sym) => match sym.white {
-                                true => {
-                                    let idx = thread_rng().gen_range(0..CHARSET.len());
-                                    let rand_char = CHARSET[idx] as char;
-                                    sym.white = false;
-                                    let next_cell = iter.next();
-                                    if let Some(cell) = next_cell {
-                                        *cell = Cell::Sym(Sym {
-                                            value: rand_char.to_string(),
-                                            white: true,
-                                        });
-                                    }
+                            false => {
+                                if !updated {
+                                    *cell = Cell::Whitespace;
                                     updated = true;
                                 }
-                                false => {
-                                    if !updated {
-                                        *cell = Cell::Whitespace;
-                                        updated = true;
-                                    }
-                                }
-                            },
+                            }
                         },
-                        None => {
-                            break;
-                        }
                     }
                 }
                 self.whitespace -= 1;
@@ -97,46 +91,41 @@ impl LineState {
             Stream::On => {
                 let line_len = self.line.len() - 1;
                 let mut iter = self.line.iter_mut();
-                loop {
-                    let next = iter.next();
-                    match next {
-                        Some(cell) => match cell {
-                            Cell::Whitespace => {
-                                if !updated {
-                                    let idx = thread_rng().gen_range(0..CHARSET.len());
-                                    let rand_char = CHARSET[idx] as char;
+                while let Some(cell) = iter.next() {
+
+                    match cell {
+                        Cell::Whitespace => {
+                            if !updated {
+                                let idx = thread_rng().gen_range(0..CHARSET.len());
+                                let rand_char = CHARSET[idx] as char;
+                                *cell = Cell::Sym(Sym {
+                                    value: rand_char.to_string(),
+                                    white: true,
+                                });
+                                updated = true;
+                            }
+                        }
+                        Cell::Sym(sym) => match sym.white {
+                            true => {
+                                let idx = thread_rng().gen_range(0..CHARSET.len());
+                                let rand_char = CHARSET[idx] as char;
+                                sym.white = false;
+                                let next_cell = iter.next();
+                                if let Some(cell) = next_cell {
                                     *cell = Cell::Sym(Sym {
                                         value: rand_char.to_string(),
                                         white: true,
                                     });
-                                    updated = true;
+                                }
+                                updated = true;
+                            }
+                            false => {
+                                if updated {
+                                    *cell = Cell::Whitespace;
+                                    updated = false;
                                 }
                             }
-                            Cell::Sym(sym) => match sym.white {
-                                true => {
-                                    let idx = thread_rng().gen_range(0..CHARSET.len());
-                                    let rand_char = CHARSET[idx] as char;
-                                    sym.white = false;
-                                    let next_cell = iter.next();
-                                    if let Some(cell) = next_cell {
-                                        *cell = Cell::Sym(Sym {
-                                            value: rand_char.to_string(),
-                                            white: true,
-                                        });
-                                    }
-                                    updated = true;
-                                }
-                                false => {
-                                    if updated {
-                                        *cell = Cell::Whitespace;
-                                        updated = false;
-                                    }
-                                }
-                            },
                         },
-                        None => {
-                            break;
-                        }
                     }
                 }
                 self.chars -= 1;

@@ -16,3 +16,4 @@ log = "0.4.20"
 log4rs = "1.2.0"
 rand = "0.8.5"
 ratatui = { version = "0.26.0", features = ["all-widgets"] }
+rayon = "1.10.0"

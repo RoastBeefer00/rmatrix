@@ -4,17 +4,19 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use matrix::{LineState, State, Direction};
+use matrix::{Direction, LineState, State};
 use rand::{thread_rng, Rng};
 use ratatui::{
     layout::Rect,
     prelude::{CrosstermBackend, Terminal},
 };
-use std::io::{stdout, Result};
 use rayon::prelude::*;
+use std::io::{stdout, Result};
 
 #[derive(Parser)]
-#[command(about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, and `q` to quit.")]
+#[command(
+    about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, and `q` to quit."
+)]
 struct Cli {
     #[arg(
         short,
@@ -25,10 +27,14 @@ struct Cli {
     color: Option<String>,
     #[arg(short, long, value_name = "SPEED", help = "Speed: 1-10")]
     speed: Option<i8>,
-    #[arg(short, long, value_name = "DIRECTION", help = "Direction: up, down, left, or right")]
+    #[arg(
+        short,
+        long,
+        value_name = "DIRECTION",
+        help = "Direction: up, down, left, or right"
+    )]
     direction: Option<String>,
 }
-
 
 mod matrix;
 
@@ -139,15 +145,20 @@ fn main() -> Result<()> {
                 event::Event::Resize(_, _) => {
                     terminal.autoresize()?;
                     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
-                },
+                }
                 event::Event::Key(key) => {
                     if key.kind == KeyEventKind::Press {
                         match key.code {
                             KeyCode::Char('q') => break,
                             KeyCode::Char('c') => {
                                 let mut rng = thread_rng();
-                                let mut colors: Vec<&str> = vec!["blue", "cyan", "red", "purple", "yellow", "green", "rainbow"];
-                                colors = colors.into_iter().filter(|color| color != &state.color.as_str()).collect::<Vec<&str>>(); 
+                                let mut colors: Vec<&str> = vec![
+                                    "blue", "cyan", "red", "purple", "yellow", "green", "rainbow",
+                                ];
+                                colors = colors
+                                    .into_iter()
+                                    .filter(|color| color != &state.color.as_str())
+                                    .collect::<Vec<&str>>();
                                 let index = rng.gen_range(0..=colors.len() - 1);
                                 state.color = colors[index].to_string();
                             }
@@ -166,30 +177,30 @@ fn main() -> Result<()> {
                                     state.direction = Direction::Up;
                                     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
                                 }
-                            },
+                            }
                             KeyCode::Down => {
                                 if state.direction != Direction::Down {
                                     state.direction = Direction::Down;
                                     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
                                 }
-                            },
+                            }
                             KeyCode::Left => {
                                 if state.direction != Direction::Left {
                                     state.direction = Direction::Left;
                                     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
                                 }
-                            },
+                            }
                             KeyCode::Right => {
                                 if state.direction != Direction::Right {
                                     state.direction = Direction::Right;
                                     matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
                                 }
-                            },
+                            }
                             _ => {}
                         }
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }

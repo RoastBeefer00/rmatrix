@@ -1,9 +1,14 @@
 use log::info;
 use rand::{thread_rng, Rng};
-use std::io::Result;
 use ratatui::{
-    layout::Rect, prelude::{CrosstermBackend, Terminal}, style::Style, text::{Line, Span, Text}, widgets::Paragraph, Frame
+    layout::Rect,
+    prelude::{CrosstermBackend, Terminal},
+    style::Style,
+    text::{Line, Span, Text},
+    widgets::Paragraph,
+    Frame,
 };
+use std::io::Result;
 use std::io::Stdout;
 
 pub struct State {
@@ -92,7 +97,6 @@ impl LineState {
                 let line_len = self.line.len() - 1;
                 let mut iter = self.line.iter_mut();
                 while let Some(cell) = iter.next() {
-
                     match cell {
                         Cell::Whitespace => {
                             if !updated {
@@ -168,9 +172,15 @@ pub enum Direction {
     Right,
 }
 
-pub fn process_matrix_cols(i: usize, line: Rect, frame: &mut Frame, matrix: &mut [LineState], state: &State) {
+pub fn process_matrix_cols(
+    i: usize,
+    line: Rect,
+    frame: &mut Frame,
+    matrix: &mut [LineState],
+    state: &State,
+) {
     if i / 2 >= matrix.len() {
-        return
+        return;
     }
     let line_state = matrix.get_mut(i / 2).unwrap();
     if state.direction == Direction::Up || state.direction == Direction::Left {
@@ -257,9 +267,15 @@ pub fn process_matrix_cols(i: usize, line: Rect, frame: &mut Frame, matrix: &mut
     }
 }
 
-pub fn process_matrix_rows(i: usize, line: Rect, frame: &mut Frame, matrix: &mut [LineState], state: &State) {
+pub fn process_matrix_rows(
+    i: usize,
+    line: Rect,
+    frame: &mut Frame,
+    matrix: &mut [LineState],
+    state: &State,
+) {
     if i >= matrix.len() {
-        return
+        return;
     }
     let line_state = matrix.get_mut(i).unwrap();
     if state.direction == Direction::Up || state.direction == Direction::Left {
@@ -272,10 +288,9 @@ pub fn process_matrix_rows(i: usize, line: Rect, frame: &mut Frame, matrix: &mut
             // Determine how to print each line
             match cell {
                 Cell::Sym(sym) => match sym.white {
-                    true => Span::styled(
-                        sym.value,
-                        Style::default().fg(ratatui::style::Color::White),
-                    ),
+                    true => {
+                        Span::styled(sym.value, Style::default().fg(ratatui::style::Color::White))
+                    }
                     false => match state.color.as_str() {
                         "blue" => Span::styled(
                             sym.value,
@@ -285,10 +300,9 @@ pub fn process_matrix_rows(i: usize, line: Rect, frame: &mut Frame, matrix: &mut
                             sym.value,
                             Style::default().fg(ratatui::style::Color::Cyan),
                         ),
-                        "red" => Span::styled(
-                            sym.value,
-                            Style::default().fg(ratatui::style::Color::Red),
-                        ),
+                        "red" => {
+                            Span::styled(sym.value, Style::default().fg(ratatui::style::Color::Red))
+                        }
                         "purple" => Span::styled(
                             sym.value,
                             Style::default().fg(ratatui::style::Color::Magenta),
@@ -339,15 +353,18 @@ pub fn process_matrix_rows(i: usize, line: Rect, frame: &mut Frame, matrix: &mut
             }
         })
         .collect();
-    // Render the line 
+    // Render the line
     frame.render_widget(Line::from(lines), line);
     if state.direction == Direction::Up || state.direction == Direction::Left {
         line_state.line.reverse();
     }
 }
 
-
-pub fn create_matrix(matrix: &mut Vec<LineState>, terminal: &mut Terminal<CrosstermBackend<Stdout>>, state: &State) -> Result<()> {
+pub fn create_matrix(
+    matrix: &mut Vec<LineState>,
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    state: &State,
+) -> Result<()> {
     let terminal_size = terminal.size().unwrap();
     let t_height = terminal_size.height;
     let t_width = terminal_size.width;
@@ -367,6 +384,6 @@ pub fn create_matrix(matrix: &mut Vec<LineState>, terminal: &mut Terminal<Crosst
     }
 
     info!("Matrix len: {}", matrix.len());
-    
+
     Ok(())
 }

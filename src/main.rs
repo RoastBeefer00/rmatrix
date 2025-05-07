@@ -163,6 +163,7 @@ fn main() -> Result<()> {
                     if key.kind == KeyEventKind::Press {
                         match key.code {
                             KeyCode::Char('q') => break,
+                            KeyCode::Char('b') => state.bold = !state.bold,
                             KeyCode::Char('c') => {
                                 let mut rng = thread_rng();
                                 let mut colors: Vec<&str> = vec![

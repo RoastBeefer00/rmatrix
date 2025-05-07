@@ -139,7 +139,7 @@ fn main() -> Result<()> {
 
         // Draw the matrix after updating all lines
         terminal.draw(|frame| {
-            let area = Rect::new(0, 0, frame.size().width, frame.size().height);
+            let area = Rect::new(0, 0, frame.area().width, frame.area().height);
             if state.direction == Direction::Up || state.direction == Direction::Down {
                 // Get the state of every other column
                 for (i, col) in area.columns().enumerate().step_by(2) {

@@ -33,14 +33,21 @@ Cycle through the speed by pressing `0-9` (0 being the equivalent of 10).
 ### Direction
 Change the direction the matrix falls using the arrow keys.
 
+### Bold
+Make the text bold.
+
 ## Help
 ```
-Usage: rmatrix [OPTIONS]
+Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, `b` to toggle bold, and `q` to quit.
+
+Usage: rjmatrix [OPTIONS]
 
 Options:
--c, --color <COLOR>  Available colors: blue, cyan, red, purple, yellow, green, rainbow
--s, --speed <SPEED>  Speed: 1-10
--h, --help           Print help
+  -c, --color <COLOR>          Available colors: blue, cyan, red, purple, yellow, green, rainbow
+  -s, --speed <SPEED>          Speed: 1-10
+  -d, --direction <DIRECTION>  Direction: up, down, left, or right
+  -b, --bold                   Make the text bold
+  -h, --help                   Print help
 
 ```
 

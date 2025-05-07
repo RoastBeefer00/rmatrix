@@ -14,7 +14,7 @@ use std::io::{stdout, Result};
 
 #[derive(Parser)]
 #[command(
-    about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, and `q` to quit."
+    about = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, arrow keys to change direction, `b` to toggle bold, and `q` to quit."
 )]
 struct Cli {
     #[arg(

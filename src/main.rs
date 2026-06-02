@@ -4,13 +4,15 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use matrix::{Direction, LineState, State};
-use rand::{thread_rng, Rng};
+use matrix::{Color, Direction, State};
+use rand::{rng, RngExt};
 use ratatui::{
     layout::Rect,
     prelude::{CrosstermBackend, Terminal},
 };
 use std::io::{stdout, Result};
+use std::str::FromStr;
+use strum::IntoEnumIterator;
 
 #[derive(Parser)]
 #[command(
@@ -39,12 +41,9 @@ struct Cli {
 
 mod matrix;
 
-fn main() -> Result<()> {
-    // log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-    let cli = Cli::parse();
-    // Poll duration determines how fast the matrix falls
-    let speed = match cli.speed {
-        Some(s) => match s {
+impl From<Cli> for State {
+    fn from(cli: Cli) -> Self {
+        let speed = match cli.speed.unwrap_or(4) {
             1 => 120,
             2 => 100,
             3 => 80,
@@ -56,79 +55,31 @@ fn main() -> Result<()> {
             9 => 10,
             10 => 5,
             _ => 60,
-        },
-        None => 60,
-    };
-
-    let direction = match cli.direction {
-        Some(d) => match d.to_lowercase().as_str() {
-            "up" => Direction::Up,
-            "right" => Direction::Right,
-            "left" => Direction::Left,
-            _ => Direction::Down,
-        },
-        None => Direction::Down,
-    };
-    let bold = cli.bold;
-    let mut state = if let Some(color) = cli.color.as_deref() {
-        match color.to_lowercase().as_str() {
-            "blue" => State {
-                color: color.to_string(),
-                speed,
-                direction,
-                bold,
-            },
-            "cyan" => State {
-                color: color.to_string(),
-                speed,
-                direction,
-                bold,
-            },
-            "red" => State {
-                color: color.to_string(),
-                speed,
-                direction,
-                bold,
-            },
-            "purple" => State {
-                color: color.to_string(),
-                speed,
-                direction,
-                bold,
-            },
-            "yellow" => State {
-                color: color.to_string(),
-                speed,
-                direction,
-                bold,
-            },
-            "rainbow" => State {
-                color: color.to_string(),
-                speed,
-                direction,
-                bold,
-            },
-            _ => State {
-                color: "green".to_string(),
-                speed,
-                direction,
-                bold,
-            },
-        }
-    } else {
+        };
+        let direction = cli
+            .direction
+            .and_then(|d| Direction::from_str(&d).ok())
+            .unwrap_or(Direction::Down);
+        let color = cli
+            .color
+            .and_then(|c| Color::from_str(&c).ok())
+            .unwrap_or(Color::Green)
+            .to_string();
         State {
-            color: "green".to_string(),
+            color,
             speed,
             direction,
-            bold,
+            bold: cli.bold,
         }
-    };
-    // Initialize ratatui and get terminal size
+    }
+}
+
+fn main() -> Result<()> {
+    let mut state: State = Cli::parse().into();
     stdout().execute(EnterAlternateScreen)?;
     enable_raw_mode()?;
     let mut terminal = Terminal::new(CrosstermBackend::new(stdout()))?;
-    let mut matrix: Vec<LineState> = Vec::new();
-    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+    let mut matrix = state.build_matrix(&mut terminal)?;
 
     loop {
         // Only print matrix every other column
@@ -141,14 +92,12 @@ fn main() -> Result<()> {
         terminal.draw(|frame| {
             let area = Rect::new(0, 0, frame.area().width, frame.area().height);
             if state.direction == Direction::Up || state.direction == Direction::Down {
-                // Get the state of every other column
                 for (i, col) in area.columns().enumerate().step_by(2) {
-                    matrix::process_matrix_cols(i, col, frame, &mut matrix, &state);
+                    state.render_col(i, col, frame, &mut matrix);
                 }
             } else {
-                // Get the state of every other row
                 for (i, row) in area.rows().enumerate() {
-                    matrix::process_matrix_rows(i, row, frame, &mut matrix, &state);
+                    state.render_row(i, row, frame, &mut matrix);
                 }
             }
         })?;
@@ -157,7 +106,7 @@ fn main() -> Result<()> {
             match event::read()? {
                 event::Event::Resize(_, _) => {
                     terminal.autoresize()?;
-                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                    matrix = state.build_matrix(&mut terminal)?;
                 }
                 event::Event::Key(key) => {
                     if key.kind == KeyEventKind::Press {
@@ -165,16 +114,12 @@ fn main() -> Result<()> {
                             KeyCode::Char('q') => break,
                             KeyCode::Char('b') => state.bold = !state.bold,
                             KeyCode::Char('c') => {
-                                let mut rng = thread_rng();
-                                let mut colors: Vec<&str> = vec![
-                                    "blue", "cyan", "red", "purple", "yellow", "green", "rainbow",
-                                ];
-                                colors = colors
-                                    .into_iter()
-                                    .filter(|color| color != &state.color.as_str())
-                                    .collect::<Vec<&str>>();
-                                let index = rng.gen_range(0..=colors.len() - 1);
-                                state.color = colors[index].to_string();
+                                let current = Color::from_str(&state.color).unwrap_or(Color::Green);
+                                let options: Vec<Color> =
+                                    Color::iter().filter(|c| *c != current).collect();
+                                state.color =
+                                    options[rng().random_range(0..options.len())].to_string();
+                                matrix = state.build_matrix(&mut terminal)?;
                             }
                             KeyCode::Char('1') => state.speed = 120,
                             KeyCode::Char('2') => state.speed = 100,
@@ -189,25 +134,25 @@ fn main() -> Result<()> {
                             KeyCode::Up => {
                                 if state.direction != Direction::Up {
                                     state.direction = Direction::Up;
-                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                    matrix = state.build_matrix(&mut terminal)?;
                                 }
                             }
                             KeyCode::Down => {
                                 if state.direction != Direction::Down {
                                     state.direction = Direction::Down;
-                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                    matrix = state.build_matrix(&mut terminal)?;
                                 }
                             }
                             KeyCode::Left => {
                                 if state.direction != Direction::Left {
                                     state.direction = Direction::Left;
-                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                    matrix = state.build_matrix(&mut terminal)?;
                                 }
                             }
                             KeyCode::Right => {
                                 if state.direction != Direction::Right {
                                     state.direction = Direction::Right;
-                                    matrix::create_matrix(&mut matrix, &mut terminal, &state)?;
+                                    matrix = state.build_matrix(&mut terminal)?;
                                 }
                             }
                             _ => {}

@@ -1,27 +1,22 @@
 {
   inputs = {
-    cargo2nix.url = "github:cargo2nix/cargo2nix/release-0.12";
-    flake-utils.follows = "cargo2nix/flake-utils";
-    nixpkgs.follows = "cargo2nix/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = inputs: with inputs;
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    { nixpkgs, flake-utils, ... }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [cargo2nix.overlays.default];
-        };
-
-        rustPkgs = pkgs.rustBuilder.makePackageSet {
-          rustVersion = "1.75.0";
-          packageFun = import ./Cargo.nix;
-        };
-
-      in rec {
-        packages = {
-          rjmatrix = (rustPkgs.workspace.rjmatrix {});
-          default = packages.rjmatrix;
+        pkgs = import nixpkgs { inherit system; };
+      in
+      {
+        packages.default = pkgs.rustPlatform.buildRustPackage {
+          pname = "rjmatrix";
+          version = "1.0.7";
+          src = ./.;
+          cargoLock.lockFile = ./Cargo.lock;
         };
       }
     );

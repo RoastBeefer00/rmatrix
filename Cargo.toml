@@ -1,7 +1,7 @@
 [package]
 name = "rjmatrix"
-version = "1.0.6"
-edition = "2021"
+version = "1.0.7"
+edition = "2024"
 description = "Creates the matrix in the terminal. Use `c` to cycle colors, `0-9` to change speed, and `q` to quit."
 authors = ["Jake J <roastbeefer000@gmail.com>"]
 license = "MIT"
@@ -11,8 +11,8 @@ repository = "https://github.com/RoastBeefer00/rmatrix"
 
 [dependencies]
 clap = { version = "4.5.2", features = ["derive"] }
-crossterm = "0.27.0"
+crossterm = "0.29.0"
 log = "0.4.20"
-log4rs = "1.2.0"
-rand = "0.8.5"
-ratatui = { version = "0.29.0", features = ["all-widgets"] }
+rand = "0.10.1"
+ratatui = { version = "0.30.0" }
+strum = { version = "0.28", features = ["derive"] }
